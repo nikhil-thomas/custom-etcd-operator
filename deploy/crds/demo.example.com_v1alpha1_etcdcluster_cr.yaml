@@ -1,0 +1,7 @@
+apiVersion: demo.example.com/v1alpha1
+kind: EtcdCluster
+metadata:
+  name: example-etcdcluster
+spec:
+  # Add fields here
+  size: 3
