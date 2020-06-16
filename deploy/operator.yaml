@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: custom-etcd-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: custom-etcd-operator
+  template:
+    metadata:
+      labels:
+        name: custom-etcd-operator
+    spec:
+      serviceAccountName: custom-etcd-operator
+      containers:
+        - name: custom-etcd-operator
+          # Replace this with the built image name
+          image: REPLACE_IMAGE
+          command:
+          - custom-etcd-operator
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "custom-etcd-operator"
