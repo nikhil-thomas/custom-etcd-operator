@@ -2,6 +2,8 @@ apiVersion: demo.example.com/v1alpha1
 kind: EtcdCluster
 metadata:
   name: example-etcdcluster
+  namespace: default
 spec:
-  # Add fields here
-  size: 3
+  # update key replica to size
+  replica: 10
+  version: 3.4.9

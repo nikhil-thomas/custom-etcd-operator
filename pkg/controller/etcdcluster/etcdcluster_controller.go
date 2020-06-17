@@ -2,8 +2,10 @@ package etcdcluster
 
 import (
 	"context"
+	"fmt"
 
 	demov1alpha1 "github.com/akashshinde/etcd-operator/pkg/apis/demo/v1alpha1"
+	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -47,16 +48,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	// Watch for changes to primary resource EtcdCluster
 	err = c.Watch(&source.Kind{Type: &demov1alpha1.EtcdCluster{}}, &handler.EnqueueRequestForObject{})
-	if err != nil {
-		return err
-	}
-
-	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner EtcdCluster
-	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &demov1alpha1.EtcdCluster{},
-	})
 	if err != nil {
 		return err
 	}
@@ -100,5 +91,92 @@ func (r *ReconcileEtcdCluster) Reconcile(request reconcile.Request) (reconcile.R
 		return reconcile.Result{}, err
 	}
 
+	found := &v1.Deployment{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		d := r.CreateDeployment(instance)
+
+		err = r.client.Create(context.TODO(), d)
+		if err != nil {
+			reqLogger.Error(err, "Failed to create deployment")
+			return reconcile.Result{}, err
+		}
+	} else {
+		err = r.client.Get(context.TODO(), request.NamespacedName, found)
+		if err != nil {
+			reqLogger.Error(err, "Failed to fetch Deployment")
+			return reconcile.Result{}, err
+		}
+		d := r.UpdateDeployment(found, instance)
+
+		err = r.client.Update(context.TODO(), d)
+		if err != nil {
+			reqLogger.Error(err, "Failed to update Deployment")
+			return reconcile.Result{}, err
+		}
+	}
+
+	status := fmt.Sprintf("Cluster created with etcd version %s", instance.Spec.Version)
+	if status != instance.Status.Status {
+		instance.Status.Status = status
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			reqLogger.Error(err, "Failed to update status")
+			return reconcile.Result{Requeue: false}, err
+		}
+	}
 	return reconcile.Result{}, nil
+}
+
+func (r ReconcileEtcdCluster) UpdateDeployment(d *v1.Deployment, instance *demov1alpha1.EtcdCluster) *v1.Deployment {
+	d.Spec.Replicas = instance.Spec.Replica
+	for i := range d.Spec.Template.Spec.Containers {
+		d.Spec.Template.Spec.Containers[i].Image = "bitnami/etcd:" + instance.Spec.Version
+	}
+	return d
+}
+
+func (r ReconcileEtcdCluster) CreateDeployment(instance *demov1alpha1.EtcdCluster) *v1.Deployment {
+	d := &v1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      instance.Name,
+			Namespace: instance.Namespace,
+		},
+		Spec: v1.DeploymentSpec{
+			Replicas: instance.Spec.Replica,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app": "database"},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app": "database"},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "containers",
+							Image: "bitnami/etcd:" + instance.Spec.Version,
+							Env: []corev1.EnvVar{
+								{
+									Name:  "ALLOW_NONE_AUTHENTICATION",
+									Value: "yes",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	d.SetOwnerReferences([]metav1.OwnerReference{
+		{
+			APIVersion:         instance.APIVersion,
+			Kind:               instance.Kind,
+			Name:               instance.Namespace,
+			UID:                instance.UID,
+			Controller:         nil,
+			BlockOwnerDeletion: nil,
+		},
+	})
+	return d
 }
