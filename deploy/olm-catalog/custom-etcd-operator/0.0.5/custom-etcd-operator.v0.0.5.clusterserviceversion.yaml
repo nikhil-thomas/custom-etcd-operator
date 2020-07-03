@@ -1,0 +1,169 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "demo.example.com/v1alpha1",
+          "kind": "EtcdCluster",
+          "metadata": {
+            "name": "example-etcdcluster",
+            "namespace": "default"
+          },
+          "spec": {
+            "replica": 10,
+            "version": "3.4.9"
+          }
+        }
+      ]
+    capabilities: Basic Install
+  name: custom-etcd-operator.v0.0.5
+  namespace: placeholder
+spec:
+  keywords:
+  - etcd
+  - database
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: EtcdCluster is the Schema for the etcdclusters API
+      kind: EtcdCluster
+      name: etcdclusters.demo.example.com
+      version: v1alpha1
+  description: Etcd Operator to install Etcd clusters
+  displayName: Custom Etcd Operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments:
+      - name: custom-etcd-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: custom-etcd-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: custom-etcd-operator
+            spec:
+              containers:
+              - command:
+                - custom-etcd-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: custom-etcd-operator
+                image: quay.io/nikhilthomas/custom-etcd-operaotr-ctrl:1.0
+                imagePullPolicy: Always
+                name: custom-etcd-operator
+                resources: {}
+              serviceAccountName: custom-etcd-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - services/finalizers
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - custom-etcd-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          - deployments
+          verbs:
+          - get
+        - apiGroups:
+          - demo.example.com
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        serviceAccountName: custom-etcd-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - ""
+  maintainers:
+  - {}
+  maturity: alpha
+  provider:
+    name: Custom Etcd Org
+    url: custom.com
+  replaces: custom-etcd-operator.v0.0.4
+  version: 0.0.5
