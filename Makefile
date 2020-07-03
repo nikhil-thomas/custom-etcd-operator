@@ -83,7 +83,7 @@ ifndef TOKEN
 	@echo TOKEN not set
 	@exit 1
 endif
-	operator-courier --verbose push  \
+	@operator-courier --verbose push  \
 		./deploy/olm-catalog/custom-etcd-operator \
 		${QUAY_NAMESPACE} \
 		custom-etcd-operator \
