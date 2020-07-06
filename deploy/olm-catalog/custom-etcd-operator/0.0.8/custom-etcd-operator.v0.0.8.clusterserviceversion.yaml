@@ -1,0 +1,276 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "demo.example.com/v1alpha1",
+          "kind": "EtcdCluster",
+          "metadata": {
+            "name": "example-etcdcluster",
+            "namespace": "default"
+          },
+          "spec": {
+            "replica": 10,
+            "version": "3.4.9"
+          }
+        }
+      ]
+    capabilities: Basic Install
+  name: custom-etcd-operator.v0.0.8
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: EtcdCluster is the Schema for the etcdclusters API
+      kind: EtcdCluster
+      name: etcdclusters.demo.example.com
+      version: v1alpha1
+  description: Etcd Operator to install Etcd clusters
+  displayName: Custom Etcd Operator
+  icon:
+  - base64data: |
+      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
+    mediatype: image/png
+  install:
+    spec:
+      deployments:
+      - name: custom-etcd-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: custom-etcd-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: custom-etcd-operator
+            spec:
+              containers:
+              - command:
+                - custom-etcd-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: custom-etcd-operator
+                image: quay.io/nikhilthomas/custom-etcd-operaotr-ctrl:3.0
+                imagePullPolicy: Always
+                name: custom-etcd-operator
+                resources: {}
+              serviceAccountName: custom-etcd-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - services/finalizers
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - custom-etcd-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          - deployments
+          verbs:
+          - get
+        - apiGroups:
+          - demo.example.com
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        serviceAccountName: custom-etcd-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - ""
+  maintainers:
+  - {}
+  maturity: alpha
+  provider:
+    name: Custom Etcd Org
+    url: custom.com
+  replaces: custom-etcd-operator.v0.0.7
+  version: 0.0.8

@@ -16,7 +16,7 @@ spec:
       containers:
         - name: custom-etcd-operator
           # Replace this with the built image name
-          image: quay.io/nikhilthomas/custom-etcd-operaotr-ctrl:2.0
+          image: quay.io/nikhilthomas/custom-etcd-operaotr-ctrl:3.0
           command:
           - custom-etcd-operator
           imagePullPolicy: Always

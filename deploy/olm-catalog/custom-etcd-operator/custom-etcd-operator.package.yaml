@@ -1,5 +1,5 @@
 channels:
-- currentCSV: custom-etcd-operator.v0.0.7
+- currentCSV: custom-etcd-operator.v0.0.8
   name: default
 defaultChannel: default
 packageName: custom-etcd-operator
